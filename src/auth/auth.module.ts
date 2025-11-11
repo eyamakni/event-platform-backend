@@ -7,10 +7,12 @@ import { AuthController } from './auth.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { LocalStrategy } from './strategies/local.strategy';
 import { UsersModule } from '../users/users.module';
+import { EmailModule } from '../email/email.module'; // ✅ <-- Ajoute ceci
 
 @Module({
   imports: [
-    UsersModule,        // ✅ pour injecter UsersService
+    UsersModule,
+     EmailModule,         // ✅ pour injecter UsersService
     PassportModule,     // ✅ obligatoire pour @UseGuards(AuthGuard)
     ConfigModule,       // ✅ pour que ConfigService soit disponible
     JwtModule.registerAsync({

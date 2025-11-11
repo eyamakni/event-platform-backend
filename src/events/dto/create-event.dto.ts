@@ -9,6 +9,7 @@ import {
   IsArray,
   ValidateNested,
   Min,
+  IsInt,
 } from "class-validator"
 import { Type } from "class-transformer"
 import { EventType } from "../entities/event.entity"
@@ -106,4 +107,7 @@ export class CreateEventDto {
   @Type(() => CreateProgramDto)
   @IsOptional()
   programs?: CreateProgramDto[]
+   @IsOptional()
+  @IsInt()
+  organizerId?: number; 
 }

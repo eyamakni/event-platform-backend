@@ -7,6 +7,7 @@ import { Program } from './entities/program.entity';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { NotificationsService } from '../notifications/notifications.service';
+import { Organizer } from '../organizers/organizer.entity'; // ✅ Import ajouté
 
 @Injectable()
 export class EventsService {
@@ -16,43 +17,61 @@ export class EventsService {
 
     @InjectRepository(Sponsor)
     private readonly sponsorsRepository: Repository<Sponsor>,
-
+ @InjectRepository(Organizer) // ✅ Injection du repository Organizer
+    private readonly organizersRepository: Repository<Organizer>,
     @InjectRepository(Program)
     private readonly programsRepository: Repository<Program>,
 
     private readonly notificationsService: NotificationsService,
   ) {}
 
-  async create(createEventDto: CreateEventDto): Promise<Event> {
-    const { sponsors, programs, ...eventData } = createEventDto;
+ async create(createEventDto: CreateEventDto): Promise<Event> {
+  const { sponsors, programs, organizerId, ...eventData } = createEventDto;
 
-    const event = this.eventsRepository.create(eventData);
-    const savedEvent = await this.eventsRepository.save(event);
+  // 🟦 Crée d’abord l’événement de base
+  const event = this.eventsRepository.create(eventData);
 
-    if (sponsors && sponsors.length > 0) {
-      const sponsorEntities = sponsors.map((sponsor) =>
-        this.sponsorsRepository.create({
-          ...sponsor,
-          eventId: savedEvent.id,
-        }),
-      );
-      await this.sponsorsRepository.save(sponsorEntities);
+  // 🟩 Si un organizerId est fourni, lie l’événement à l’organisateur correspondant
+  if (organizerId) {
+    const organizer = await this.organizersRepository.findOne({ where: { id: organizerId } });
+    if (!organizer) {
+      throw new NotFoundException(`Organizer with ID ${organizerId} not found`);
     }
-
-    if (programs && programs.length > 0) {
-      const programEntities = programs.map((program) =>
-        this.programsRepository.create({
-          ...program,
-          eventId: savedEvent.id,
-        }),
-      );
-      await this.programsRepository.save(programEntities);
-    }
-
-    await this.notificationsService.notifyEventCreated(savedEvent.id, savedEvent.title);
-
-    return this.findOne(savedEvent.id);
+    event.organizer = organizer;
   }
+
+  // Sauvegarde initiale de l’événement
+  const savedEvent = await this.eventsRepository.save(event);
+
+  // 🟨 Enregistre les sponsors liés à cet événement
+  if (sponsors && sponsors.length > 0) {
+    const sponsorEntities = sponsors.map((sponsor) =>
+      this.sponsorsRepository.create({
+        ...sponsor,
+        eventId: savedEvent.id,
+      }),
+    );
+    await this.sponsorsRepository.save(sponsorEntities);
+  }
+
+  // 🟧 Enregistre les programmes liés à cet événement
+  if (programs && programs.length > 0) {
+    const programEntities = programs.map((program) =>
+      this.programsRepository.create({
+        ...program,
+        eventId: savedEvent.id,
+      }),
+    );
+    await this.programsRepository.save(programEntities);
+  }
+
+  // 🟦 Envoi d’une notification automatique
+  await this.notificationsService.notifyEventCreated(savedEvent.id, savedEvent.title);
+
+  // 🟩 Retourne l’événement complet avec ses relations (organizer, sponsors, programs)
+  return this.findOne(savedEvent.id);
+}
+
 
   async findAll(): Promise<Event[]> {
     return this.eventsRepository.find({

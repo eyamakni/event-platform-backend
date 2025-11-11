@@ -6,4 +6,5 @@ export class UpdateEventDto extends PartialType(CreateEventDto) {
   @IsBoolean()
   @IsOptional()
   isActive?: boolean
+  registeredCount?: number;
 }

@@ -1,7 +1,8 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from "typeorm"
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany,ManyToOne,JoinColumn } from "typeorm"
 import { Registration } from "../../registrations/entities/registration.entity"
 import { Sponsor } from "./sponsor.entity"
 import { Program } from "./program.entity"
+import { Organizer } from 'src/organizers/organizer.entity';
 
 export enum EventType {
   HACKATHON = "hackathon",
@@ -37,6 +38,9 @@ export class Event {
   @Column({ type: "datetime" })
   endDate: Date
 
+  @Column({ default: 0 })
+registeredCount: number;
+
   @Column({ default: true })
   isFree: boolean
 
@@ -64,7 +68,9 @@ export class Event {
     { cascade: true },
   )
   sponsors: Sponsor[]
-
+@ManyToOne(() => Organizer, (organizer) => organizer.events, { eager: true })
+@JoinColumn({ name: 'organizerId' })
+organizer: Organizer;
   @OneToMany(
     () => Program,
     (program) => program.event,

@@ -69,10 +69,37 @@ export class UsersService {
     return user
   }
 
-  async update(id: string, updateData: Partial<User>): Promise<User> {
-    await this.usersRepository.update(id, updateData)
-    return this.findOne(id)
+ async findById(id: number): Promise<User> {
+  const user = await this.usersRepository.findOne({ where: { id: String(id) } as any });
+  if (!user) throw new NotFoundException(`User with ID ${id} not found`);
+  return user;
+}
+
+async update(id: number | string, updateData: Partial<User>): Promise<User> {
+  await this.usersRepository.update(String(id), updateData);
+  return this.findOne(String(id));
+}
+
+async searchUsers(query: string, page = 1, limit = 10): Promise<{ users: User[]; total: number; totalPages: number }> {
+  const skip = (page - 1) * limit;
+
+  const qb = this.usersRepository
+    .createQueryBuilder("user")
+    .select(["user.id", "user.email", "user.firstName", "user.lastName", "user.role", "user.createdAt"])
+    .orderBy("user.createdAt", "DESC");
+
+  if (query) {
+    qb.where(
+      "LOWER(user.firstName) LIKE LOWER(:query) OR LOWER(user.lastName) LIKE LOWER(:query) OR LOWER(user.email) LIKE LOWER(:query)",
+      { query: `%${query}%` }
+    );
   }
+
+  const [users, total] = await qb.skip(skip).take(limit).getManyAndCount();
+  const totalPages = Math.ceil(total / limit);
+
+  return { users, total, totalPages };
+}
 
   async remove(id: string): Promise<void> {
     const result = await this.usersRepository.delete(id)

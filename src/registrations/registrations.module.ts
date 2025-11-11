@@ -5,9 +5,10 @@ import { RegistrationsController } from "./registrations.controller"
 import { Registration } from "./entities/registration.entity"
 import { EventsModule } from "../events/events.module"
 import { UsersModule } from "../users/users.module"
+import { EmailModule } from '../email/email.module'; // ✅ ajoute ceci
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Registration]), EventsModule, UsersModule],
+  imports: [TypeOrmModule.forFeature([Registration]), EventsModule, UsersModule,EmailModule,],
   controllers: [RegistrationsController],
   providers: [RegistrationsService],
   exports: [RegistrationsService],

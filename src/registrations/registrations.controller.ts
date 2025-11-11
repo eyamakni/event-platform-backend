@@ -48,4 +48,9 @@ export class RegistrationsController {
   remove(@Param("id") id: string) {
     return this.registrationsService.remove(id)
   }
+  @Get('event/:eventId/participants')
+findParticipantsByEvent(@Param('eventId') eventId: string) {
+  return this.registrationsService.findParticipantsByEvent(eventId);
+}
+
 }
